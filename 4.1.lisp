@@ -13,15 +13,14 @@
 	      :initform (make-instance 'vec3 :x 0.0 :y 0.0 :z 0.0)
 	      :accessor direction)))
 
-(setq foo (make-instance
-	   'ray
-	   :origin (make-instance 'point3  :x 1.2 :y 10.1 :z -3.56)
-	   :direction (make-instance 'vec3 :x 3.2 :y 0.5  :z 56)))
-
 (defmethod at ((r ray) (n number))
   (*mul (origin r) (+plus (direction r) n) ))
 
-(at foo 100)
+(let ((foo (make-instance
+	    'ray
+	    :origin (make-instance 'point3  :x 1.2 :y 10.1 :z -3.56)
+	    :direction (make-instance 'vec3 :x 3.2 :y 0.5  :z 56))))
+  (output (at foo 100) nil))
 
 ;;; 4.2. Sending Rays Into the Scene
 
@@ -31,9 +30,11 @@
 
 ;; MEMO 本にはメソッドごとのテスト結果の値が載っていず、まちがっていたときのデバッグがとても大変。インクリメンタルに進められる教科書になっていることがとても重要だと実感。
 (defmethod color ((r ray))
-  (let ((n (*scalar (+plus (unit (direction r)) 1.0) 0.5)))
-    (*mul (*mul +unit-vector+ (-minus n 1.0))
-	  (*mul +unit-color+ n))))
+  (let* ((n (* (+ (y (unit (direction r))) 1.0) 0.5))
+	 (vec (*mul (*scalar +unit-vector+ (- 1.0 n))
+		    (*scalar +unit-color+ n))))
+    ;; coerce type vec3 to color
+    (make-instance 'color :x (x vec) :y (y vec) :z (z vec))))
 
 ;;; draing facilities
 
@@ -61,7 +62,7 @@
 TODO
 |#
 
-;; たくさんのwidth,height を扱うのでまとめてみた
+;; いくつかのwidth,height を扱うのでまとめてみた
 (defclass wh ()
   ((width  :initarg :width  :accessor width)
    (height :initarg :height :accessor height)))
@@ -126,9 +127,10 @@ Common Lisp Recipes 13-11. Extending and Modifying CLOS より
 |#
 
 
+;; defclass camera facility
 (let* ((h 2)
        (fcl-lngth 1)
-       (vw (/ aspect-ratio h))
+       (vw (/ +aspect-ratio+ h))
        (orgn +zero-vector+)
        (hrzntl (make-instance 'vec3 :x vw :y 0 :z 0))
        (vrtcl (make-instance 'vec3 :x 0 :y h :z 0)))
@@ -164,13 +166,24 @@ Common Lisp Recipes 13-11. Extending and Modifying CLOS より
 (defun pixel-color-at (x y screen camera)
   (let ((u (/ x (1- (width screen))))
 	(v (/ y (1- (height screen)))))
-    (color (make-instance 'ray
-			  :origin (origin camera)
-			  :direction (-minus 
-				      (+plus (lower-left-corner *camera*)
-					     (+plus (*scalar (horizontal *camera*) u)
-						    (*scalar (vertical *camera*) v)))
-				      (origin camera))))))
+    (color (make-instance
+	    'ray
+	    :origin (origin camera)
+	    :direction
+	    ;;
+	    ;; lower-left-corner + u*horizontal + v*vertical - origin
+	    ;;
+	    ;; 以下はベクトル(vec3)
+	    ;; - lower-left-corner
+	    ;; - horizontal, vertical
+	    ;; - origin
+	    (;-minus
+	     ; TODO
+	     -minus
+	     (+plus (lower-left-corner *camera*)
+		    (+plus (*scalar (horizontal *camera*) u)
+			   (*scalar (vertical *camera*) v)))
+	     (origin camera))))))
 
 ;; when binding SB-KERNEL::Y
 ;;    [Condition of type TYPE-ERROR]The value
@@ -188,7 +201,19 @@ Common Lisp Recipes 13-11. Extending and Modifying CLOS より
 			      (output
 			       (pixel-color-at x y screen camera))))))
 
+#|
+おかしい。マイナス値が出てくる。マイナスの明るさのピクセルなんてない。
+デバッグできた。
+-minus を使っているのはpixel-color-at だけでなく、color メソッドもそうだった。
+TODO MEMO trace 機能への要望は、trace した関数がどこから呼び出されたのかのcaller を表示してほしいというものだ。
 (render-ppm (make-instance 'wh :width 2 :height 2) *camera* t)
+(trace -minus)
+|#
+
+(render-ppm (make-instance 'wh :width 2 :height 2) *camera* t)
+(render-ppm (make-instance 'wh :width 400 :height 200) *camera* t)
+(render-ppm (make-instance 'wh :width 400 :height 200) *camera* t)
+(render-ppm +screen+ *camera* t)
 
 (with-open-file
     (stream "test.ppm" :direction :output :if-exists :supersede)
