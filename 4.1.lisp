@@ -30,9 +30,12 @@
 
 ;; MEMO 本にはメソッドごとのテスト結果の値が載っていず、まちがっていたときのデバッグがとても大変。インクリメンタルに進められる教科書になっていることがとても重要だと実感。
 (defmethod color ((r ray))
-  (let* ((n (* (+ (y (unit (direction r))) 1.0) 0.5))
-	 (vec (*mul (*scalar +unit-vector+ (- 1.0 n))
-		    (*scalar +unit-color+ n))))
+  ;; シンボル t が使えないのでn としている
+  (let* ((n (* 0.5
+	       (+ (y (unit (direction r)))
+		  1.0)))
+	 (vec (+plus (*scalar +unit-vector+ (- 1.0 n))
+		     (*scalar +unit-color+ n))))
     ;; coerce type vec3 to color
     (make-instance 'color :x (x vec) :y (y vec) :z (z vec))))
 
@@ -126,7 +129,6 @@ Common Lisp Recipes 13-11. Extending and Modifying CLOS より
 (width (viewport (make-instance 'camera))) ; => できるね！
 |#
 
-
 ;; defclass camera facility
 (let* ((h 2)
        (fcl-lngth 1)
@@ -162,7 +164,7 @@ Common Lisp Recipes 13-11. Extending and Modifying CLOS より
 ;;; Render
 
 ;; MEMO 定数screen があると、仮引数にこの名前が使えない
-;;      したがって定数の場合には耳あてしておくのが無難
+;;      したがって定数の側に耳あてしておく必要があった
 (defun pixel-color-at (x y screen camera)
   (let ((u (/ x (1- (width screen))))
 	(v (/ y (1- (height screen)))))
@@ -177,12 +179,10 @@ Common Lisp Recipes 13-11. Extending and Modifying CLOS より
 	    ;; - lower-left-corner
 	    ;; - horizontal, vertical
 	    ;; - origin
-	    (;-minus
-	     ; TODO
-	     -minus
-	     (+plus (lower-left-corner *camera*)
-		    (+plus (*scalar (horizontal *camera*) u)
-			   (*scalar (vertical *camera*) v)))
+	    (-minus
+	     (+plus (lower-left-corner camera)
+		    (+plus (*scalar (horizontal camera) u)
+			   (*scalar (vertical camera) v)))
 	     (origin camera))))))
 
 ;; when binding SB-KERNEL::Y
@@ -210,10 +210,14 @@ TODO MEMO trace 機能への要望は、trace した関数がどこから呼び�
 (trace -minus)
 |#
 
+#|
 (render-ppm (make-instance 'wh :width 2 :height 2) *camera* t)
 (render-ppm (make-instance 'wh :width 400 :height 200) *camera* t)
 (render-ppm (make-instance 'wh :width 400 :height 200) *camera* t)
 (render-ppm +screen+ *camera* t)
+|#
+
+(render-ppm (make-instance 'wh :width 2 :height 2) *camera* t)
 
 (with-open-file
     (stream "test.ppm" :direction :output :if-exists :supersede)

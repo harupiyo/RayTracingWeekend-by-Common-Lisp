@@ -283,11 +283,18 @@ Restarts:
 
 (load "utils")
 
+(defun floor-color (c)
+  "ppm ファイルにおける色は0-255 までなので、万一超えていたら255に丸める
+   具体的にはcolor のx,y,x のいずれかが1 のときに256になる
+   テスト目的で(make-instance 'color :x 1 :y 1 :z 1)
+   のように表記したいのでこのフィルターを挿入した "
+  (if (> c 255) 255 c))
+
 (defmethod output ((c color) &optional (stream nil))
   (format stream "~a ~a ~a"
-	  (nearest-1 (* 255.999 (x c)))
-	  (nearest-1 (* 255.999 (y c)))
-	  (nearest-1 (* 255.999 (z c)))))
+	  (floor-color (nearest-1 (* 255.999 (x c))))
+	  (floor-color (nearest-1 (* 255.999 (y c))))
+	  (floor-color (nearest-1 (* 255.999 (z c))))))
 
 ;; output メソッドが型ごとに適切なものを呼ばれているかを確認
 (defvar baz1 (make-instance 'vec3 :x 0.25 :y 0.105 :z 0.3))
@@ -309,10 +316,10 @@ Restarts:
 				:y (/ y (1- height))
 				:z 0.25))))))
 
-(render-ppm 2 2 t)
+;; (render-ppm 2 2 t)
 
-;; (with-open-file
-;;     (stream "test.ppm" :direction :output :if-exists :supersede)
-;;   (render-ppm 256 256 stream)) ; OK!
+(with-open-file
+     (stream "test.ppm" :direction :output :if-exists :supersede)
+   (render-ppm 256 256 stream)) ; OK!
 
 ;;; MEMO Emacs では.ppm ファイルをそのまま開ける！(inline 画像が出る)
