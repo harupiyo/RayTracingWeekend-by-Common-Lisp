@@ -131,8 +131,8 @@ Common Lisp Recipes 13-11. Extending and Modifying CLOS より
 
 ;; defclass camera facility
 (let* ((h 2)
+       (vw (* +aspect-ratio+ h))
        (fcl-lngth 1)
-       (vw (/ +aspect-ratio+ h))
        (orgn +zero-vector+)
        (hrzntl (make-instance 'vec3 :x vw :y 0 :z 0))
        (vrtcl (make-instance 'vec3 :x 0 :y h :z 0)))
