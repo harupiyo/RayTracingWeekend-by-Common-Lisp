@@ -14,7 +14,7 @@
 	      :accessor direction)))
 
 (defmethod at ((r ray) (n number))
-  (*mul (origin r) (+plus (direction r) n) ))
+  (+plus (origin r) (*scalar (direction r) n) ))
 
 (let ((foo (make-instance
 	    'ray
