@@ -42,9 +42,6 @@
 				     (at r h) ;; 光線と球表面との接点
 				     (center +sphere+)))))
 		 ;; 得られた法線ベクターを色表現に起こす
-		 (format t "~A ~A ~A~%" (x normal)
-			      (y normal) 
-			      (z normal))
 		 (*scalar (make-instance 'vec3
 					 :x (1+ (x normal))
 					 :y (1+ (y normal))
@@ -74,3 +71,28 @@
   (render-ppm +screen+ *camera* stream))
 
 ;;; 6.2 Simplifying the Ray-Shpere Intersection Code
+
+(defmethod hit ((shape sphere) (r ray))
+  (let* ((oc (-minus (origin r) (center shape)))
+	 (a (length-squared (direction r)))
+	 (harf-b (*dot oc (direction r)))  ; harf-b is a scalar
+	 (c (- (length-squared oc)
+	       (expt (radius shape) 2)))   ; c is a scalar too
+	 ;; discriminant: 判別式
+	 ;; 二次方程式の判別式(b^2-4ac)を計算
+	 ;; < 0 ... 当たっていない
+	 ;; = 0 ... １点で当たっている（接している）
+	 ;; > 0 ... 2点で当たっている（貫いている）"
+	 (discriminant (- (expt harf-b 2) (* a c))))
+    (if (< discriminant 0)
+	;; 当たっていない時
+	-1
+	;; 当たった時は二次方程式の解の公式で解を返す
+	(/ (- (- harf-b) (sqrt discriminant))
+	   a))))
+
+(with-open-file
+    (stream "test.ppm" :direction :output :if-exists :supersede)
+  (render-ppm +screen+ *camera* stream))
+
+;;; 6.3. An Abstruction for Hittable Objects
