@@ -86,7 +86,7 @@ https://stackoverflow.com/questions/15465138/find-functions-arity-in-common-lisp
 
 ; length: ユークリッドノルム = eucledean-norm
 (defmethod euclidean-norm ((v vec3))
-  (sqrt (length-squared v))
+  (sqrt (length-squared v)))
 
 (defmethod length-squared ((v vec3))
    (+ (expt (x v) 2)
